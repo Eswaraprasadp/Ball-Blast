@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Projectile motion</title>
+	<meta charset="utf-8">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+	<script type="application/javascript">
+		var canvas, raf, ctx, rx, ry, tx, ty, t = 0, flag = true, g = 0.2;
+		var ball = {
+				x: 200,
+				y : 300,
+				vx : 0,
+				vy: -12,
+				radius: 25,
+				color: 'rgba(100, 100, 255, 1)',
+				draw: function(){
+					ctx.save();
+					ctx.beginPath();
+					ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+					ctx.closePath();
+					ctx.fillStyle = this.color;
+					ctx.fill();
+
+					//Spikes
+					// for (let angle = 0; angle < Math.PI * 2; angle += Math.PI/4){			
+					// 	rx = Math.cos(angle);
+					// 	ry = -1 * Math.sin(angle);
+					// 	tx = Math.sin(angle);
+					// 	ty = Math.cos(angle);
+					// 	ctx.save();
+					// 	ctx.beginPath();
+					// 	ctx.moveTo(this.x + this.radius*rx, this.y + this.radius*ry);
+					// 	ctx.lineTo(this.x + this.radius*rx + this.radius/10*tx, this.y + this.radius*ry + this.radius/10*ty);
+					// 	ctx.lineTo(this.x + this.radius*1.2*rx, this.y + this.radius*1.2*ry);
+					// 	ctx.fillStyle = 'black';
+					// 	ctx.fill();
+					// 	ctx.restore();			
+					// }
+					ctx.restore();
+				}
+			}
+		function start(){
+			canvas = document.getElementById("canvas");
+			ctx = canvas.getContext("2d");
+			ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+			// raf = window.requestAnimationFrame(draw);
+			canvas.addEventListener('mouseover', function(e){
+				raf = window.requestAnimationFrame(draw);
+			})
+			canvas.addEventListener('mouseout', function(e){
+				window.cancelAnimationFrame(raf);
+			})
+			}
+			function draw(){
+				// ctx.clearRect(0, 0, canvas.width, canvas.height);
+				ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+				ctx.fillRect(0, 0, canvas.width, canvas.height);
+				ball.draw();
+
+				if(ball.radius + ball.x + ball.vx >= canvas.width || -ball.radius + ball.x + ball.vx <= 0){
+					ball.vx = -1 * ball.vx;
+				}
+				if(ball.radius + ball.y + ball.vy >= canvas.height){
+					ball.vy = -1 * ball.vy - g;
+					console.log("Hit wall");
+					console.log("vx: " + ball.vx.toFixed(2) + " vy: " + ball.vy.toFixed(2));
+					console.log("");
+					// ball.vy = 0;
+					// ball.g = -1*ball.g;
+				}
+				else if(-ball.radius + ball.y + ball.vy <= 0){
+					ball.vy = -1 * ball.vy - g;
+					console.log("Hit wall");
+					console.log("vx: " + ball.vx.toFixed(2) + " vy: " + ball.vy.toFixed(2));
+					console.log("");				
+				}
+
+				ball.vy += g;
+				ball.x += ball.vx;
+				ball.y +=  ball.vy;
+				// console.log("x: " + ball.x.toFixed(2) + " y: " + ball.y.toFixed(2));
+				// console.log("vx: " + ball.vx.toFixed(2) + " vy: " + ball.vy.toFixed(2));
+				// console.log("vx: " + ball.vx.toFixed(2) + " vy: " + ball.vy.toFixed(2));
+
+				// console.log("");
+				raf = window.requestAnimationFrame(draw);
+			}
+	
+	</script>
+</head>
+<body onload = 'start()'>
+	<canvas id="canvas" width="400" height="600"></canvas>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Ball Blast</title>
+	<meta charset="utf-8">	
+	<link rel="stylesheet"
+   href="https://fonts.googleapis.com/css?family=Roboto+Slab">
+	<link rel="stylesheet" type="text/css" href="css/styles.css">
+	<!-- <link rel= "shortcut icon" type="image/jpg" href=""> -->
+</head>
+<body onload="load()">
+		<div class="container">
+		<div class="col-1">
+			<div class="result-card">
+				<div class="score-div"><span id="score-text">Score: 0</span></div>
+			</div>
+			<div class="canvas-card">
+				<canvas id="canvas" width="400" height="500">
+					<span>Your browser does not support canvas.</span>
+				</canvas> 
+			</div>
+		</div>
+		<div class="col-2">
+				<div class="name-form">
+					<div class="input" style="display: block;" id="single-player-div">
+						<span>Name: </span><input type="text" name="Name" class="form-control-text" id="name">
+					</div>
+				</div>
+				<div class="submit-div">
+					<button type="button" id="submit" class="customButton" onclick="submit()"><span>Submit</span></button>
+				</div>
+		<br>
+			<div class="score-card" id="scoreboard-div">
+				<table id="scoreboard" class="scoreboard">
+					<tr>
+						<th>Rank</th>
+						<th>Name</th>
+						<th>Score</th>
+					</tr>
+					<tr>
+						<td>1</td>
+						<td>GOD</td>
+						<td>Infinity</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript" src="ballBlast.js"></script>
+</body>
+</html>

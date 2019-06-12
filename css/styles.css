@@ -1,0 +1,203 @@
+body{
+	text-align: center;
+	display: flex;
+	background-color: rgba(0, 0, 0, 0.95);
+	width: auto;
+	height: 100%;
+	margin-bottom: 0px;
+	background:
+		linear-gradient(to bottom, rgba(0, 0, 0, 1), transparent),
+		linear-gradient(to top right, rgba(10, 10, 40, 1), transparent),
+		linear-gradient(to top left, rgba(45, 10, 40, 1), transparent),
+		linear-gradient(to top, rgba(0, 0, 0, 1), transparent);
+	background-blend-mode: screen;
+	background-repeat: repeat;	
+}
+html{
+	width: 99%;
+	height: 100%;
+}
+.footer{
+	width: 100%;
+	float: left;
+	padding-left: 40px;
+	background:
+	linear-gradient(to bottom, rgba(0, 0, 0, 1), transparent),
+	linear-gradient(to right, rgba(10, 10, 40, 1), transparent),
+	linear-gradient(to left, rgba(45, 10, 40, 1), transparent),
+	linear-gradient(to top, rgba(0, 0, 0, 1), transparent);
+	background-blend-mode: screen;
+}
+.container{
+	display: flex;
+	flex-direction: row;
+	/*flex: 1 1 auto;*/
+	width: 100%;
+	height: 100%;
+}
+.col-1{
+	display: flex;
+	flex-direction: column;
+	width: 58%;
+	padding-right: 20px;
+	text-align: center;
+	height: 100%;
+}
+.col-2{
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 auto
+	width: 42%;
+	/*height: 100%;*/
+	text-align: center;
+	padding-top: 0%;
+	margin-left: 10px;
+	padding-bottom: 5px;
+}
+.canvas-card{
+	/*height: 60%;*/
+	margin-bottom: 5px;
+	/*margin-right: 20px;*/
+}
+.result-card{
+	margin-top: 5px;
+	/*height: 35%;*/
+	margin-bottom: 10px;
+	text-align: center;
+}
+.score-div{
+	/*height: 40%;*/
+	margin: 2px auto;
+}
+.details-card{
+	/*height: 25%;*/
+}
+.score-card{
+	/*height: 60%;*/
+	/*margin-top: 5%;*/
+}
+.name-form{
+	/*height: 15%;*/
+	/*display: flex;
+	flex-direction: column;*/
+	margin-top: 40px;
+	margin-bottom: 20px;
+}
+.submit-div{
+	/*height: 10%;*/
+	margin-top: 15px;
+	margin-bottom: 15px;
+}
+.scoreboard{
+	width: 100%;
+}
+h1{
+	float: left;
+	width: 50%;
+	color: rgba(250, 250, 250, 0.7);
+	font-family: "Kremlin Pro Web", "Roboto Slab", verdana, "georgia";
+	text-shadow: 1.1px 1.1px 0.5px #aaa;
+	font-weight: normal;
+	margin-bottom: 10px;
+	margin-top: 4px;
+}
+span{
+	font-size: 20px;
+	color: rgba(250, 250, 250, 0.7);
+	font-family: "Kremlin Pro Web", "Roboto Slab", verdana, "georgia";
+	text-shadow: 1.1px 1.1px 0.5px #aaa;
+	font-weight: normal;
+}
+.customButton{
+	/*background-color: rgba(170, 130, 170, 0.8);*/
+	background-color: rgba(0, 0, 0, 0.5);
+}
+td{
+	font-size: 20px;
+	color: white;
+	font-family: "Kremlin Pro Web", "Roboto Slab", verdana, "georgia";
+	text-shadow: 1.1px 1.1px 0.5px #aaa;
+	font-weight: normal;
+	border: 1px solid gray;
+	padding: 6px 5px;
+}
+th{
+	font-size: 20px;
+	color: rgba(250, 250, 250, 0.7);
+	font-family: "Kremlin Pro Web", "Roboto Slab", verdana, "georgia";
+	text-shadow: 0.5px 0.5px 0.2px white;
+	font-weight: normal;
+	border: 1px solid gray;
+	padding: 6px 5px;
+}
+.form-control-text{
+	width: 30%;
+	font-size: 20px;
+	color: black;
+	font-family: "Kremlin Pro Web", "Roboto Slab", verdana, "georgia";
+	text-shadow: 1.1px 1.1px 0.5px #aaa;
+	font-weight: normal;	
+	background-color: rgba(240, 240, 240, 0.94);
+	margin: 1% auto;
+}
+@media screen and (min-width: 50px) and  (max-width: 875px){
+	body{
+		text-align: center;
+		display: flex;
+		background-color: rgba(0, 0, 0, 0.95);
+		width: auto;
+		height: 100%;
+		margin-bottom: 0px;
+		background:
+			linear-gradient(to bottom, rgba(0, 0, 0, 1), transparent),
+			linear-gradient(to top right, rgba(10, 10, 40, 1), transparent),
+			linear-gradient(to top left, rgba(45, 10, 40, 1), transparent),
+			linear-gradient(to top, rgba(0, 0, 0, 1), transparent);
+		background-blend-mode: screen;
+		background-repeat: repeat;	
+	}
+	html{
+		width: 99%;
+		height: auto;
+	}
+	.container{
+		display: flex;
+		flex-direction: column;
+		/*flex: 1 1 auto;*/
+		width: 99%;
+		height: 99%;
+	}	
+	.col-1{
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		text-align: center;
+		padding-top: 5px;
+		padding-bottom: 10px;
+		width: 100%;
+		/*height: 700px;*/
+	}
+	.col-2{
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		/*height: 100%;*/
+		text-align: center;
+		padding-top: 10px;
+		padding-bottom: 10px;
+	}
+	.canvas-card{
+		/*height: 60%;*/
+		margin-bottom: 5px;
+		width: 100%;
+	}
+	.scoreboard{
+		padding-left: 10%;
+		padding-right: 10%;
+		width: 100%;
+	}
+/*	.scoreboard-div{
+		display: flex;
+		flex: 1 1 auto;
+	}*/
+}
