@@ -1,52 +1,68 @@
 var started = false, gameOver = false, ended = false, canStart = false, name, asterisk = false;
 var scoreText, score;
-var playerNumber = 2, playerRank = 2, scoreHistory = [[1, 1, 'GOD', Infinity]];
-var blue = 'rgba(100, 100, 255, 1)', pink = 'rgba(255, 100, 100, 1)', red = 'rgba(250, 50, 50, 0.9)', green = 'rgba(50, 250, 50, 0.9)';
-var gray = 'rgba(220, 220, 220, 0.85)', grayTransparent = 'rgba(190, 190, 190, 0.7)', white = 'rgba(250, 250, 250, 0.9)', black = 'rgba(10, 10, 10, 0.8)', magenta = 'rgba(127, 0, 127, 0.9)';
+var playerRank = 2, scoreHistory = [[1, 'GOD', Infinity]];
+var blue = 'rgba(100, 100, 255, 1)', pink = 'rgba(255, 100, 100, 1)', red = 'rgba(250, 50, 50, 0.9)', green = 'rgba(50, 250, 50, 0.9)', lightBlue = 'rgba(207, 228, 249, 0.95)', lightGreen = 'rgba(214, 239, 220, 0.95)', lightOrange = 'rgba(238, 190, 147, 0.9)';
+var gray = 'rgba(240, 245, 250, 0.9)', grayTransparent = 'rgba(220, 220, 220, 0.7)', white = 'rgba(250, 250, 250, 1)', black = 'rgba(10, 10, 10, 0.8)', magenta = 'rgba(127, 0, 127, 0.9)', lighterBlack = 'rgba(10, 10, 10, 0.6)';
+var backgroundColor = lightBlue;
 var Start, Restart, PlayAgain, Play, GameOver, Name, BallBlast;
 var stones, cannon, bullets, flags, g = 0.2, maxBullets, landmarkScoreBullets, bulletsRate;
 var bulletFlags, canAttack, bulletsAlive;
 var stoneRate, canGenerateStone, stonesAlive, maxStones, stoneGone;
 var skyGradient, cannonGradient, wheelGradients = [cannonGradient, cannonGradient, cannonGradient];
 var cannonX, cannonY, cannonWidth, cannonOpeningWidth, cannonHeight;
+var prevName;
+var alpha, hitStone, stoneAlpha, audio;
 
 function load(){
 	canvas = document.getElementById("canvas");
 	ctx = canvas.getContext("2d");
 	scoreText = document.getElementById("score-text");
-	// localStorage.clear();
+	
 	scoreHistory = JSON.parse(localStorage.getItem('scoreHistory'));
-	if(scoreHistory != null){
-		scoreHistory[0][3] = Infinity;
+
+	// localStorage.removeItem('firstTime');
+	// localStorage.removeItem('secondTime');
+	// localStorage.removeItem('thirdTime');
+
+	if(localStorage.getItem('firstTime') == null){
+		// scoreHistory = [[1, "GOD", Infinity], [2, "wr", 56],[3,"rq",55],[4,"sw",23],[5,"gg",22],[6,"as",21],[8,"es",13],[10,"eswar",8]]
+		// console.log("Saved scoreHistory was : " + JSON.stringify(scoreHistory));
+		let newScoreHistory = [], seenFlags = [], size = scoreHistory.length, counter = 1;
+		while(size--)
+			seenFlags.push(false);
+		for (let i = 0; i < scoreHistory.length; ++i){		
+			if(!seenFlags[i]){
+				let highScore = scoreHistory[i][3], index = i;
+				for (let j = i+1; j < scoreHistory.length; ++j){
+					if(scoreHistory[j][2] === scoreHistory[i][2]){
+						seenFlags[j] = true;
+						if(scoreHistory[j][3] > highScore[0]){
+							highScore[0] = scoreHistory[j][3];
+							index = j;
+						}
+					}
+				}
+				newScoreHistory.push([counter, scoreHistory[index][2], scoreHistory[index][3]]);
+				++counter;
+			}
+		}
+		scoreHistory = newScoreHistory;
+
+		localStorage.setItem('firstTime', "Not firstTime time");
+		// console.log("Changed Score History is: " + JSON.stringify(scoreHistory));
 	}
 	else{
-		scoreHistory = [[1, 1, 'GOD', Infinity]];
+		// console.log("Saved scoreHistory was : " + JSON.stringify(scoreHistory));
+		changeScoreHistory();
+		// console.log("Changed Score History is: " + JSON.stringify(scoreHistory));
 	}
-	console.log("Saved scoreHistory is : " + scoreHistory);
+	
 
-	for (let i = 1; i < scoreHistory.length; ++i){
-		var newRow = document.createElement("tr");
-
-		var newRank = document.createElement("td");
-		var newName = document.createElement("td");
-		var newScore = document.createElement("td");
-
-		newRank.innerHTML = scoreHistory[i][1];	
-		newName.innerHTML =  scoreHistory[i][2];
-		newScore.innerHTML = scoreHistory[i][3];
-
-		newRow.appendChild(newRank);
-		newRow.appendChild(newName);
-		newRow.appendChild(newScore);	
-
-		scoreboard.appendChild(newRow);
-		++playerRank;
-		++playerNumber;
-	}
+	changeScoreboard();
 
 	ctx.save();
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.fillStyle = gray;
+	ctx.fillStyle = backgroundColor;
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.restore();
 
@@ -72,12 +88,6 @@ function restart(){
 	
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	
-	var prevName = scoreboard.rows[playerRank].cells[1].innerHTML;
-	console.log("Previous name in scoreboard is : " + prevName);
-	scoreboard.rows[playerRank].cells[1].innerHTML = prevName.slice(0, -1);
-	++playerNumber;
-	playerRank = playerNumber;
-	
 	init();
 	raf = window.requestAnimationFrame(draw);
 }
@@ -101,8 +111,69 @@ function init(){
 	stonesAlive = 0;
 	landmarkScoreBullets = 2;
 
+	alpha = 1;
+	stoneAlpha = 0.1;
+
+	audio = new Audio("res/intro_screen.mp3");
+
+	audio.volume = 0.5;
+	audio.play();
+
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	drawBackground();
+
+	createNewRow();
+
+	document.addEventListener("keydown", arrowControl);
+}
+
+function changeScoreHistory(){
+	let newScoreHistory = [], seenFlags = [], size = scoreHistory.length, counter = 1;
+	while(size--)
+		seenFlags.push(false);
+	for (let i = 0; i < scoreHistory.length; ++i){		
+		if(!seenFlags[i]){
+			let highScore = scoreHistory[i][2], index = i;
+			for (let j = i+1; j < scoreHistory.length; ++j){
+				if(scoreHistory[j][1] === scoreHistory[i][1]){
+					seenFlags[j] = true;
+					if(scoreHistory[j][2] > highScore[0]){
+						highScore[0] = scoreHistory[j][2];
+						index = j;
+					}
+				}
+			}
+			newScoreHistory.push([counter, scoreHistory[index][1], scoreHistory[index][2]]);
+			++counter;
+		}
+	}
+	scoreHistory = newScoreHistory;
+}
+
+function changeScoreboard(){
+	scoreboard.innerHTML = "<tr><th>Rank</th><th>Name</th><th>Score</th></tr><tr><td>1</td><td>GOD</td><td>Infinity</td></tr>";
+
+	for (let i = 1; i < scoreHistory.length; ++i){
+		let newRow = document.createElement("tr");
+
+		let newRank = document.createElement("td");
+		let newName = document.createElement("td");
+		let newScore = document.createElement("td");
+
+		newRank.innerHTML = scoreHistory[i][0];	
+		newName.innerHTML =  scoreHistory[i][1];
+		newScore.innerHTML = scoreHistory[i][2];
+
+		newRow.appendChild(newRank);
+		newRow.appendChild(newName);
+		newRow.appendChild(newScore);	
+
+		scoreboard.appendChild(newRow);
+	}
+}
+
+function createNewRow(){
+	playerRank = scoreHistory.length + 1;
 
 	var newRow = document.createElement("tr");
 
@@ -114,192 +185,253 @@ function init(){
 	newScore.innerHTML = score;
 
 	newName.innerHTML =  name + '*';
-	scoreHistory.push([playerNumber, playerRank, name, score]);
+	scoreHistory.push([playerRank, name, score]);
 
 	newRow.appendChild(newRank);
 	newRow.appendChild(newName);
 	newRow.appendChild(newScore);	
 
 	scoreboard.appendChild(newRow);
-
-	document.addEventListener("keydown", arrowControl);
-
 }
 
 function draw(){
 	drawBackground();
-	var deletedBulletIndices = [], changed = false;
-	score += 0.01;
-	scoreText.innerHTML = "Score : " + Math.floor(score);
-
-	scoreHistory[playerRank - 1][3] = Math.floor(score);
-
-	if(score >= scoreHistory[playerRank - 2][3]){
-		console.log("Current score was greater than previous score");
-		swapScoreHistory(playerRank - 1, playerRank - 2);	
-		swapTableTexts(playerRank, playerRank - 1);
-		--playerRank;
-	}
-	scoreboard.rows[playerRank].cells[2].innerHTML = Math.floor(score);
-
-	if(score >= landmarkScoreBullets && maxBullets <= 5){
-		++maxBullets;
-		landmarkScoreBullets += 4;
-		if(maxBullets == 3){
-			landmarkScoreBullets += 2;
+	if(alpha >= 0.1){
+		cannon.draw();
+		alpha -= 0.01;
+		if(alpha < 0.1){
+			audio.restartNew("res/off_limits.mp3");
 		}
-		else if(maxBullets == 4){
+		ctx.save();
+		ctx.globalAlpha = alpha;
+		writeText("Move with", canvas.width/2, canvas.height/2, magenta, 1, 2);
+		writeText("Arrow Keys", canvas.width/2, canvas.height/2, magenta, 2, 2);
+		ctx.restore();
+	}
+	else{
+		var deletedBulletIndices = [], changed = false;
+		score += 0.01;
+		scoreText.innerHTML = "Score : " + Math.floor(score);
+
+		scoreHistory[playerRank - 1][2] = Math.floor(score);
+
+		if(score >= scoreHistory[playerRank - 2][2]){
+			console.log("Current score was greater than previous score");
+			swapScoreHistory(playerRank - 1, playerRank - 2);	
+			swapTableTexts(playerRank, playerRank - 1);
+			--playerRank;
+		}
+		scoreboard.rows[playerRank].cells[2].innerHTML = Math.floor(score);
+
+		if(score >= landmarkScoreBullets && maxBullets <= 5){
+			++maxBullets;
 			landmarkScoreBullets += 4;
+			if(maxBullets == 3){
+				landmarkScoreBullets += 2;
+			}
+			else if(maxBullets == 4){
+				landmarkScoreBullets += 4;
+			}
+			else if((maxBullets == 2) || (maxBullets == 4) || (maxBullets == 6)){
+				++maxStones;
+			}
+
 		}
-	}
 
-	cannon.draw();
+		cannon.draw();
 
-	if(canAttack){
-		for(let i = 0; i < maxBullets; ++i){
-			bullets.push(new Bullet(cannon.x, cannon.y, cannon.width, cannon.openingWidth, i+1, maxBullets));
-			++bulletsAlive;	
-			console.log("New Bullet Pushed");
+		if(canAttack){
+			for(let i = 0; i < maxBullets; ++i){
+				bullets.push(new Bullet(cannon.x, cannon.y, cannon.width, cannon.openingWidth, i+1, maxBullets));
+				++bulletsAlive;	
+				// console.log("New Bullet Pushed");
+			}
+			canAttack = false;
+			flags[0] = true;
 		}
-		canAttack = false;
-		flags[0] = true;
-	}
 
-	if(bulletsAlive > 0){
-		if(flags[0]){
-			console.log("bulletsAlive = " + bulletsAlive);
-			flags[0] = false;
-		}
-	}
-
-	if(canGenerateStone){
-		stones.push([new Stone(), true]);
-		++stonesAlive;
-		console.log("New Stone Pushed");
-		canGenerateStone = false;
-	}
-
-	bullets.forEach(function(bullet, bulletIndex){
-		if(!bullet.isLoaded()){
-			bullet.getImage().onload = function(){
-				bullet.setLoaded();
+		if(bulletsAlive > 0){
+			if(flags[0]){
+				// console.log("bulletsAlive = " + bulletsAlive);
+				flags[0] = false;
 			}
 		}
-		stones.forEach((stone, stoneIndex) => {
-			if(circleCollidesRectangle(stone[0], bullet) && stone[0].isAlive() && bullet.isLoaded() && bullet.isAlive()){
-				console.log("Bullet hit a stone");
-				score += 0.1;
+
+		if(canGenerateStone){
+			stones.push([new Stone(), true]);
+			++stonesAlive;
+			// console.log("New Stone Pushed");
+			canGenerateStone = false;
+		}
+
+		bullets.forEach(function(bullet, bulletIndex){
+			if(!bullet.isLoaded()){
+				bullet.getImage().onload = function(){
+					bullet.setLoaded();
+				}
+			}
+			stones.forEach((stone, stoneIndex) => {
+				if(circleCollidesRectangle(stone[0], bullet) && stone[0].isAlive() && bullet.isLoaded() && bullet.isAlive()){
+					// console.log("Bullet hit a stone");
+					score += 0.1;
+					deletedBulletIndices.push(bulletIndex);
+					stone[0].reduceStrength();
+				}
+
+			});
+
+			if(!bullet.isAlive() && bullet.isLoaded()){
+				// console.log("Bullet crossed the canvas");
 				deletedBulletIndices.push(bulletIndex);
-				stone[0].reduceStrength();
 			}
-
+			bullet.draw();
 		});
 
-		if(!bullet.isAlive() && bullet.isLoaded()){
-			console.log("Bullet crossed the canvas");
-			deletedBulletIndices.push(bulletIndex);
-		}
-		bullet.draw();
-	});
-
-	for (let i = 0; i < stonesAlive; ++i){		
-		if(!stones[i][0].isAlive()){
-			--stonesAlive;
-			console.log("One " + ((stones[i][1])? "original" : "duplicated") + " stone is not alive");
-			if(stones[i][1]){
-				stones.push([new Stone(stones[i][0].initialStrength/2, stones[i][0].x , stones[i][0].y, false), false]);
-				stones.push([new Stone(stones[i][0].initialStrength/2, stones[i][0].x , stones[i][0].y, true), false]);
-				stonesAlive += 2;
-				console.log("Two new stones pushed from Original stone");
-				canGenerateStone = false;
-			}			
-			let deletedStone = stones.splice(i, 1);			
-			// stoneGone = true;			
-		}
-		else{
-
-			stones[i][0].draw();
-		}
-
-	}
-
-	stones.forEach((stone, index)=>{
-		if((circleCollidesRectangle(stone[0], cannon) || circleCollidesCircle(stone[0], cannon.leftWheel) || circleCollidesCircle(stone[0], cannon.rightWheel)) && stone[0].isAlive()){
-				console.log("Stone collided with cannon");
-				console.log("Game Over");
-				window.cancelAnimationFrame(raf);
-				gameOver = true;
-				ending();
+		for (let i = 0; i < stonesAlive; ++i){		
+			if(!stones[i][0].isAlive()){
+				--stonesAlive;
+				// console.log("One " + ((stones[i][1])? "original" : "duplicated") + " stone is not alive");
+				if(stones[i][1]){
+					stones.push([new Stone(stones[i][0].initialStrength/2, stones[i][0].x , stones[i][0].y, false), false]);
+					stones.push([new Stone(stones[i][0].initialStrength/2, stones[i][0].x , stones[i][0].y, true), false]);
+					stonesAlive += 2;
+					// console.log("Two new stones pushed from Original stone");
+					canGenerateStone = false;
+				}			
+				let deletedStone = stones.splice(i, 1);			
+				// stoneGone = true;			
 			}
-	});
+			else{
 
-	bullets = bullets.filter((bullet, index) => {
-		var flag = true;
-		for (i of deletedBulletIndices){
-			if(i === index){
-				flag = false;
-				break;
+				stones[i][0].draw();
+			}
+
+		}
+
+		stones.forEach((stone, index)=>{
+			if((circleCollidesRectangle(stone[0], cannon) || circleCollidesCircle(stone[0], cannon.leftWheel) || circleCollidesCircle(stone[0], cannon.rightWheel)) && stone[0].isAlive()){
+					// console.log("Stone collided with cannon");
+					gameOver = true;
+					hitStone = stone[0];
+					hitStone.setAlive(false);
+					console.log("Game Over");
+					audio.volume = 0.7;
+					audio.restartNew("res/game_over.mp3");
+					window.cancelAnimationFrame(raf);
+					endingScene();
+				}
+		});
+
+		bullets = bullets.filter((bullet, index) => {
+			var flag = true;
+			for (i of deletedBulletIndices){
+				if(i === index){
+					flag = false;
+					break;
+				}
+			}
+
+			if(!flag){
+				bullet.setAlive(false);
+				--bulletsAlive;		
+				// console.log("Bullet deleted");
+				// console.log("bulletsAlive = " + bulletsAlive);	
+				changed = true;
+			}
+
+			else{
+				return bullet;
+			}
+		});
+
+
+		if(!canAttack){
+			bulletsRate -= 1;
+			if(bulletsRate <= 0){
+				canAttack = true;
+				bulletsRate = 8;
 			}
 		}
 
-		if(!flag){
-			bullet.setAlive(false);
-			--bulletsAlive;		
-			// console.log("Bullet deleted");
-			// console.log("bulletsAlive = " + bulletsAlive);	
-			changed = true;
-		}
-
-		else{
-			return bullet;
-		}
-	});
-
-
-	if(changed){
-		console.log(deletedBulletIndices.length + " bullets deleted");
-		console.log("bulletsAlive = " + bulletsAlive);
-	}
-
-	if(!canAttack){
-		bulletsRate -= 1;
-		if(bulletsRate <= 0){
-			canAttack = true;
-			bulletsRate = 8;
+		if(!canGenerateStone){
+			stoneRate -= 1;
+			if(stoneRate <= 0 && stonesAlive < maxStones){
+				canGenerateStone = true;
+				stoneRate = 50;
+			}
+			else if(stoneRate <= 0){
+				stoneRate = 50;
+			}
 		}
 	}
-
-	if(!canGenerateStone){
-		stoneRate -= 1;
-		if(stoneRate <= 0 && stonesAlive < maxStones){
-			canGenerateStone = true;
-			stoneRate = 50;
-		}
-		else if(stoneRate <= 0){
-			stoneRate = 50;
-		}
-	}
-
 	if(!gameOver){
 		raf = window.requestAnimationFrame(draw);
+	}
+}
+
+function endingScene(){
+	
+	alpha += 0.008;
+	stoneAlpha += 0.06;
+	if(stoneAlpha >= 1){
+		stoneAlpha = 0.1;
+	}
+	if(alpha <= 1){
+		let centerY = Math.floor(canvas.height/2 - 50 * 3 / 2);
+		ctx.save();
+		ctx.globalAlpha = alpha;
+		writeText("Game Over!", canvas.width/2, centerY, red);
+		ctx.restore();
+
+		ctx.save();
+		hitStone.animateBorder(stoneAlpha);
+		ctx.restore();
+
+		textAnim = window.requestAnimationFrame(endingScene);
+	}
+	else{
+		window.cancelAnimationFrame(textAnim);
+		ending();
 	}
 }
 
 function ending(){
 	ctx.save();
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.fillStyle = gray;
+	ctx.fillStyle = backgroundColor;
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.restore();
 
 	started = false;
 	ended =  true;
 
+	audio.stop();
+
+	prevName = scoreboard.rows[playerRank].cells[1].innerHTML;
+	prevName = prevName.slice(0, -1);
+	console.log("Previous name in scoreboard is : " + prevName);
+	scoreboard.rows[playerRank].cells[1].innerHTML = prevName;
+	// console.log("playerRank = " + playerRank);
+
+	changeScoreHistory();
+	changeScoreboard();
+
 	GameOver = new Button('Game Over!');
 	GameOver.draw(red, 2, 1);
 
 	PlayAgain = new Button('Play Again', 'restart');	
 	PlayAgain.draw(green, 2, 2);
+}
+
+Audio.prototype.stop = () => {
+	audio.pause();
+	audio.currentTime = 0;
+}
+
+Audio.prototype.restartNew = (uri) => {
+	audio.stop();
+	audio = new Audio(uri);
+	audio.play();
 }
 
 function drawBackground(){
@@ -352,13 +484,25 @@ function submit(){
 }
 
 window.onbeforeunload = function (e) {
-  	e = e || window.event;
+	e = e || window.event;
 
-  	var prevName = scoreHistory.slice(-1)[0][2];
-  	console.log("Score History is " + scoreHistory);
-  	console.log("Previous name before exiting was: " + prevName);
+	if(started && !ended){
+		var prevName = scoreHistory[playerRank - 1][1];
+		console.log("Score History is " + scoreHistory);
+		console.log("Previous name before exiting was: " + prevName);
+
+		for(let i = playerRank; i < scoreHistory.length; ++i){
+			if(scoreHistory[i][1] === scoreHistory[playerRank][1]){
+				let removedScore = scoreHistory.splice(i, 1);
+			}
+		}
+
+		scoreHistory.forEach((row, index) => {
+			scoreHistory[index][0] = index;
+		});
+	  }
   
-  	localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
+	localStorage.setItem('scoreHistory', JSON.stringify(scoreHistory));
 };
 function getMousePos(canvas, event) {
 	var rect = canvas.getBoundingClientRect();
@@ -370,7 +514,7 @@ function getMousePos(canvas, event) {
 	
 //Function to check whether a point is inside a rectangle
 function isInside(pos, rect){
-    return (pos.x > rect.x && pos.x < rect.x+rect.width && pos.y < rect.y+rect.height && pos.y > rect.y);
+	return (pos.x > rect.x && pos.x < rect.x+rect.width && pos.y < rect.y+rect.height && pos.y > rect.y);
 }
 
 function arrowControl(e) {
@@ -410,7 +554,7 @@ class Button{
 	}
 	draw(color, noOfButtons = 1, number = 1){
 	
-		ctx.fillStyle = gray;
+		ctx.fillStyle = backgroundColor;
 		ctx.fillRect(0, this.y, canvas.width, this.height);
 		if(noOfButtons == 1)
 			this.y = canvas.height/2 - this.height/2;
@@ -419,7 +563,7 @@ class Button{
 		if(this.start || this.restart)
 			ctx.fillStyle = white;
 		else
-			ctx.fillStyle = gray;
+			ctx.fillStyle = backgroundColor;
 		ctx.clearRect(this.x, this.y, this.width, this.height);		
 		ctx.fillRect(this.x, this.y, this.width, this.height);
 
@@ -438,7 +582,7 @@ class Button{
 	clear(){
 		ctx.clearRect(this.x, this.y, this.width, this.height);
 		ctx.save();
-		ctx.fillStyle = gray;
+		ctx.fillStyle = backgroundColor;
 		ctx.fillRect(this.x, this.y, this.width, this.height);
 		ctx.restore();
 	}
@@ -476,7 +620,7 @@ class Stone{
 		if(strength == -1){
 			this.original = true;
 			this.strength = Math.floor(Math.random()*91) + 10;
-			console.log("Inital strength was : " + this.strength);
+			// console.log("Inital strength was : " + this.strength);
 			this.radius = 30 + Math.floor((this.strength - 10)/90 * 10);
 			this.side = randomBoolean(50);
 			this.loaded = false;
@@ -497,7 +641,7 @@ class Stone{
 		else{
 			this.original = false;
 			this.direction = rightDirection;
-			console.log("New stone in constructor with strength = " + strength + " x = " + x + " y = " + y.toFixed(2));
+			// console.log("New stone in constructor with strength = " + strength + " x = " + x + " y = " + y.toFixed(2));
 			if(this.direction){
 				this.strength = Math.floor((strength + 1)/2);
 				this.vx = 2;
@@ -522,6 +666,7 @@ class Stone{
 		this.alive = true;
 		
 		this.numberOfSides = 10;
+		this.hitFlag = true;
 	}
 	draw(){  
 
@@ -530,6 +675,8 @@ class Stone{
 		} 
 
 		if(this.alive){
+			this.radius = 30 + Math.floor((this.strength - 10)/90 * 10);
+
 			drawPolygon(this.numberOfSides, this.radius - 5, this.x, this.y, this.primaryColor, false, secondaryColor(this.primaryColor));
 			drawPolygon(this.numberOfSides, this.radius, this.x, this.y, this.secondaryColor, false);
 
@@ -568,7 +715,7 @@ class Stone{
 		}   
 	}
 	reduceStrength(){
-		if(this.strength > 0){
+		if((this.strength > 0) && this.alive){
 			// console.log("Strength reduced to : " + this.strength);
 			this.strength -= 5;
 		}
@@ -581,14 +728,32 @@ class Stone{
 	isAlive(){
 		return this.alive;
 	}
+	setAlive(alive){
+		this.alive = alive;
+	}
+	animateBorder(stoneAlpha, color = white){
+		if(this.hitFlag){
+			this.radius = 30 + Math.floor((this.strength - 10)/90 * 10);
+			this.x -= this.vx;
+			this.y -= this.vy;
+			this.hitFlag = false;
+		}
+		drawPolygon(this.numberOfSides, this.radius - 5, this.x, this.y, this.primaryColor, false, secondaryColor(this.primaryColor));
+		drawPolygon(this.numberOfSides, this.radius, this.x, this.y, this.secondaryColor, true, color, true, stoneAlpha);
+
+		writeText(this.strength, this.x, this.y);
+	}
 	hide(){
 		ctx.save();
 		drawPolygon(this.numberOfSides, this.radius, this.x, this.y, skyGradient, false);
 		ctx.restore();
 	}
+	displayXY(){
+		console.log("x = " + this.x.toFixed(2) + ", y = " + this.y.toFixed(2));
+	}
 }
 
-function drawPolygon(numberOfSides, size, Xcenter, Ycenter, color, stroke = true, strokeColor = 'rgb(0, 0, 0)'){
+function drawPolygon(numberOfSides, size, Xcenter, Ycenter, color, stroke = true, strokeColor = 'rgb(0, 0, 0)', animate = false, stoneAlpha = 0.9){
 	ctx.save();
 	ctx.beginPath();
 	ctx.moveTo (Xcenter +  size * Math.cos(0), Ycenter +  size *  Math.sin(0));  
@@ -600,6 +765,9 @@ function drawPolygon(numberOfSides, size, Xcenter, Ycenter, color, stroke = true
 	ctx.fill();
 	
 	if(stroke){
+		if(animate){
+			ctx.globalAlpha = stoneAlpha;
+		}
 		ctx.strokeStyle = strokeColor;
 		ctx.lineWidth = 1;
 		ctx.stroke();		
@@ -614,6 +782,7 @@ class Cannon{
 		this.width = 36;
 		this.x = x - this.width/2;
 		this.y = y - this.height;
+		this.openingX = this.x + (this.width - this.openingWidth)/2;
 		this.openingWidth = this.width * 0.6;
 		this.leftWheel = new Wheel(this.x + (this.width - this.openingWidth)/4, this.y + this.height, this.width*0.4, true);
 		this.rightWheel = new Wheel(this.x + this.width - (this.width - this.openingWidth)/4,  this.y + this.height, this.width*0.4, false);
@@ -868,7 +1037,7 @@ function randomBoolean(probability){
 }
 
 function swapScoreHistory(i, j){
-	var arr = [0, 2, 3];
+	var arr = [1, 2];
 	arr.forEach(function(value){
 		[scoreHistory[i][value], scoreHistory [j][value]] = [scoreHistory[j][value], scoreHistory [i][value]];
 	});
@@ -904,25 +1073,30 @@ function returnNonNegative(a, b, operation, type){
 	}
 }
 
-function writeText(text, Xcenter, Ycenter, small = false){
+function writeText(text, Xcenter, Ycenter, color = white, number = 1, numberOfLines = 1, small = false){
 	let x, y;
 	ctx.save();
 	if(!small){
-		ctx.fillStyle = 'white';
+		ctx.fillStyle = color;
 		ctx.font = '48px serif';
 
 		x = ctx.measureText(text).width;
 		y = ctx.measureText('M').width;
 	}
 	else{
-		ctx.fillStyle = 'white';
+		ctx.fillStyle = color;
 		ctx.font = '40px serif';
 
 		x = ctx.measureText(text).width;
 		y = ctx.measureText('M').width;
 	}
-	
-	ctx.fillText(text, Xcenter - x/2, Ycenter + y/2.5);
+
+	if(numberOfLines == 1){	
+		ctx.fillText(text, Xcenter - x/2, Ycenter + y/2.5);
+	}
+	else{
+		ctx.fillText(text, Xcenter - x/2, Ycenter + y/2.5 + (2*number - (numberOfLines+1))*2*y/2.5)
+	}
 	ctx.restore();
 }
 
